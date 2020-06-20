@@ -1,0 +1,10 @@
+api:
+  host: :9000
+mongo:
+  connection_string: mongodb://mongo:27017
+  database: unit-tests
+tracing:
+  jaeger_disabled: false
+  jaeger_url: http://jaeger:14268/api/traces
+rabbitmq:
+  url: amqp://rabbitmq:5672

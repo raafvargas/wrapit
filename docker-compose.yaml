@@ -1,0 +1,28 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    container_name: wrapit-mongodb
+    ports:
+      - 27017
+  jaeger:
+    image: jaegertracing/all-in-one
+    container_name: wrapit-jaeger
+    ports:
+      - 14268
+  rabbitmq:
+    image: rabbitmq:3.8.5-management
+    container_name: wrapit-rabbitmq
+    ports:
+      - 5672
+  tests:
+    image: golang:1.14
+    command: go test -cover -timeout 30s ./...
+    working_dir: /app
+    links: 
+      - mongo
+      - jaeger
+      - rabbitmq
+    volumes:
+      - .:/app
+      - ./tests/config.docker.yaml:/app/tests/config.yaml
