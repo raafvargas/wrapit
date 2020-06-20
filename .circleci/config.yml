@@ -1,7 +1,11 @@
 version: 2.1
 
+orbs:
+  wait-for: cobli/wait-for@0.0.2
+
 defaults: &defaults
   working_directory: /go/src/github.com/raafvargas/wrapit
+
 commands:
   autotag:
     steps:
@@ -25,10 +29,14 @@ jobs:
     docker:
     - image: circleci/golang:1.14
     - image: mongo
-    - image: rabbitmq:3.8.5
+    - image: rabbitmq
     - image: jaegertracing/all-in-one
     steps:
       - checkout
+      - wait-for/port:
+          port: 5672
+      - wait-for/port:
+          port: 27017
       - restore_cache:
           keys:
             - vendor-{{ checksum "go.sum" }}
