@@ -1,0 +1,81 @@
+version: 2.1
+
+defaults: &defaults
+  working_directory: /go/src/github.com/raafvargas/wrapit
+commands:
+  autotag:
+    steps:
+      - run:
+          name: Get autotag
+          command: |
+            sudo apt-get install git -y \
+            && wget -O autotag https://github.com/pantheon-systems/autotag/releases/download/1.1.1/Linux \
+            && sudo chmod +x autotag \
+            && sudo mv autotag /usr/local/bin
+  ssh-keyscan:
+    steps:
+      - run: |
+          mkdir ~/.ssh \
+          && touch ~/.ssh/known_hosts \
+          && ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+jobs:
+  run-tests:
+    <<: *defaults
+    docker:
+    - image: circleci/golang:1.14
+    - image: mongo
+    - image: rabbitmq:3.8.5
+    - image: jaegertracing/all-in-one
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - vendor-{{ checksum "go.sum" }}
+      - run:
+          name: Dependencies
+          command: go mod vendor
+      - run:
+          name: Run Tests
+          command: go test -failfast -timeout 30s -cover ./...
+      - save_cache:
+          key: vendor-{{ checksum "go.sum" }}
+          paths:
+            - vendor
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  release-vesion:
+    <<: *defaults
+    docker:
+    - image: circleci/golang:1.14
+    steps:
+      - attach_workspace:
+          at: .
+      - autotag
+      - run:
+          name: Create Version
+          command: autotag > current_version || autotag 2>&1
+      - ssh-keyscan
+      - run:
+          name: Tag Git Version
+          command: git tag $(cat current_version) && git push origin $(cat current_version)
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+      - run-tests
+
+      - release-vesion:
+          requires:
+            - run-tests
+          filters:
+            branches:
+              only:
+                - master
