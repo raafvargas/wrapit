@@ -31,7 +31,8 @@ func NewProducer(connection *RabbitConnection) *Producer {
 
 // Publish ...
 func (p *Producer) Publish(ctx context.Context, exchange string, message interface{}) error {
-	ctx, span := p.tracer.Start(ctx, PublisherOperationName)
+	ctx, span := p.tracer.Start(ctx, PublisherOperationName,
+		trace.WithSpanKind(trace.SpanKindProducer))
 	defer span.End()
 
 	headers := make(tracing.AMQPSupplier)
