@@ -2,6 +2,13 @@ package tracing
 
 import (
 	"github.com/streadway/amqp"
+	"go.opentelemetry.io/otel/api/propagation"
+	"go.opentelemetry.io/otel/api/trace"
+)
+
+var (
+	// AMQPPropagator ...
+	AMQPPropagator propagation.HTTPPropagator = trace.B3{}
 )
 
 // AMQPSupplier ...

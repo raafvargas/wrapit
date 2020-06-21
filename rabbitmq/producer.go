@@ -7,7 +7,6 @@ import (
 	"github.com/raafvargas/wrapit/tracing"
 	"github.com/streadway/amqp"
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/propagation"
 	"go.opentelemetry.io/otel/api/trace"
 )
 
@@ -18,17 +17,15 @@ var (
 
 // Producer ...
 type Producer struct {
-	connection  *RabbitConnection
-	propagators propagation.Propagators
-	tracer      trace.Tracer
+	connection *RabbitConnection
+	tracer     trace.Tracer
 }
 
 // NewProducer ...
 func NewProducer(connection *RabbitConnection) *Producer {
 	return &Producer{
-		connection:  connection,
-		propagators: global.Propagators(),
-		tracer:      global.Tracer(TracingTracerName),
+		connection: connection,
+		tracer:     global.Tracer(TracingTracerName),
 	}
 }
 
@@ -38,7 +35,7 @@ func (p *Producer) Publish(ctx context.Context, exchange string, message interfa
 	defer span.End()
 
 	headers := make(tracing.AMQPSupplier)
-	propagation.InjectHTTP(ctx, p.propagators, headers)
+	tracing.AMQPPropagator.Inject(ctx, headers)
 
 	data, err := json.Marshal(message)
 

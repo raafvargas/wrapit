@@ -12,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/propagation"
 	"go.opentelemetry.io/otel/api/trace"
 	"golang.org/x/sync/semaphore"
 )
@@ -32,8 +31,7 @@ type Consumer struct {
 
 	connection *RabbitConnection
 
-	propagators propagation.Propagators
-	tracer      trace.Tracer
+	tracer trace.Tracer
 
 	MessageType  reflect.Type
 	Prefetch     int
@@ -46,7 +44,6 @@ type Consumer struct {
 func NewConsumer(connection *RabbitConnection, options ...ConsumerOption) (*Consumer, error) {
 	consumer := &Consumer{
 		connection:   connection,
-		propagators:  global.Propagators(),
 		tracer:       global.Tracer(TracingTracerName),
 		Asynchronous: 10,
 		Prefetch:     100,
@@ -112,8 +109,7 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 	ctx, span := c.tracer.Start(context.Background(), ConsumerOperationName)
 	defer span.End()
 
-	ctx = propagation.ExtractHTTP(ctx, c.propagators,
-		tracing.AMQPSupplier(delivery.Headers))
+	ctx = tracing.AMQPPropagator.Extract(ctx, tracing.AMQPSupplier(delivery.Headers))
 
 	message := reflect.New(c.MessageType).Interface()
 
