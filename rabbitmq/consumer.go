@@ -109,6 +109,9 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 	ctx, span := c.tracer.Start(context.Background(), ConsumerOperationName)
 	defer span.End()
 
+	logrus.WithField("headers", delivery.Headers).
+		Info("message headers")
+
 	ctx = tracing.AMQPPropagator.Extract(ctx, tracing.AMQPSupplier(delivery.Headers))
 
 	message := reflect.New(c.MessageType).Interface()
