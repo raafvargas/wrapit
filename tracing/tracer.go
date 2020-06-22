@@ -12,7 +12,7 @@ import (
 // Config ...
 type Config struct {
 	JaegerURL      string `yaml:"jaeger_url"`
-	JaegerDisabled bool   `yaml:"jaeger_disableed"`
+	JaegerDisabled bool   `yaml:"jaeger_disabled"`
 }
 
 // Register ...
