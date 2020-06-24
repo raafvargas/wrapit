@@ -35,3 +35,9 @@ func TestFromValidationError(t *testing.T) {
 	e = contract.FromValidationError(err)
 	assert.Equal(t, http.StatusUnprocessableEntity, e.Code)
 }
+
+func TestBusinessError(t *testing.T) {
+	err := contract.BusinessErrorf("invalid arg %s", ":(")
+	assert.Equal(t, http.StatusConflict, err.Code)
+	assert.Contains(t, err.Messages, "invalid arg :(")
+}

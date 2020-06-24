@@ -19,6 +19,17 @@ func NewError(code int, messages ...string) *Error {
 	return &Error{Code: code, Messages: messages}
 }
 
+// BusinessError  ...
+func BusinessError(messages ...string) *Error {
+	return &Error{Code: http.StatusConflict, Messages: messages}
+}
+
+// BusinessErrorf  ...
+func BusinessErrorf(message string, args ...interface{}) *Error {
+	message = fmt.Sprintf(message, args...)
+	return BusinessError(message)
+}
+
 // FromValidationError ...
 func FromValidationError(e error) *Error {
 	validationErrors, ok := e.(validator.ValidationErrors)
