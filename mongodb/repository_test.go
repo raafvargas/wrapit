@@ -50,19 +50,18 @@ func (s *RepositoryTestSuite) TestRepository() {
 		Value: uuid.New().String(),
 	}
 
-	result, err := s.repository.Insert(context.Background(), doc)
+	err := s.repository.Insert(context.Background(), doc)
 
 	s.assert.NoError(err)
-	s.assert.IsType(&MongoTestDocument{}, result)
-	s.assert.False(result.(*MongoTestDocument).ID.IsZero())
+	s.assert.False(doc.ID.IsZero())
 
 	oldValue := doc.Value
-	result.(*MongoTestDocument).Value = uuid.New().String()
+	doc.Value = uuid.New().String()
 
-	err = s.repository.Update(context.Background(), result.(*MongoTestDocument).ID, doc)
+	err = s.repository.Update(context.Background(), doc.ID, doc)
 	s.assert.NoError(err)
 
-	result2, err := s.repository.FindByID(context.Background(), result.(*MongoTestDocument).ID)
+	result2, err := s.repository.FindByID(context.Background(), doc.ID)
 	s.assert.NoError(err)
 	s.assert.NotEqual(oldValue, result2.(*MongoTestDocument).Value)
 }
@@ -74,7 +73,7 @@ func (s *RepositoryTestSuite) TestRepositoryInvalidID() {
 		Value: uuid.New().String(),
 	}
 
-	_, err := s.repository.Insert(context.Background(), doc)
+	err := s.repository.Insert(context.Background(), doc)
 
 	s.assert.Error(err)
 	s.assert.EqualError(err, mongodb.ErrCannotSetID.Error())

@@ -15,6 +15,13 @@ var (
 	ErrCannotSetID = errors.New("cannot set id property")
 )
 
+// Repository ...
+type Repository interface {
+	Insert(ctx context.Context, document interface{}) error
+	Update(ctx context.Context, id interface{}, document interface{}) error
+	FindByID(ctx context.Context, id interface{}) (interface{}, error)
+}
+
 // MongoRepository ...
 type MongoRepository struct {
 	idProperty   string
@@ -33,11 +40,11 @@ func NewMongoRepository(idProperty string, documentType reflect.Type, collection
 }
 
 // Insert ...
-func (r *MongoRepository) Insert(ctx context.Context, document interface{}) (interface{}, error) {
+func (r *MongoRepository) Insert(ctx context.Context, document interface{}) error {
 	result, err := r.Collection.InsertOne(ctx, document)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	field := reflect.ValueOf(document).Elem().FieldByName(r.idProperty)
@@ -45,12 +52,12 @@ func (r *MongoRepository) Insert(ctx context.Context, document interface{}) (int
 	if !field.IsValid() || !field.CanSet() {
 		logrus.WithField("document", document).
 			Warnf("property %s is invalid or cannot be set", r.idProperty)
-		return nil, ErrCannotSetID
+		return ErrCannotSetID
 	}
 
 	field.Set(reflect.ValueOf(result.InsertedID))
 
-	return document, err
+	return err
 }
 
 // Update ...
