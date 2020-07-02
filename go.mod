@@ -3,6 +3,7 @@ module github.com/raafvargas/wrapit
 go 1.14
 
 require (
+	github.com/auth0-community/go-auth0 v1.0.0
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.3.0
 	github.com/google/uuid v1.1.1
@@ -16,5 +17,7 @@ require (
 	go.opentelemetry.io/otel v0.6.0
 	go.opentelemetry.io/otel/exporters/trace/jaeger v0.6.0
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
+	gopkg.in/go-playground/assert.v1 v1.2.1
+	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 )
