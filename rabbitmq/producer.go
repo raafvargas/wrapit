@@ -15,6 +15,11 @@ var (
 	PublisherOperationName = "rabbitmq.publish"
 )
 
+// AMQPProducer ...
+type AMQPProducer interface {
+	Publish(ctx context.Context, exchange string, message interface{}) error
+}
+
 // Producer ...
 type Producer struct {
 	connection *RabbitConnection

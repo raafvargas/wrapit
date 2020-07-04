@@ -24,6 +24,11 @@ var (
 	ErrInvalidMessageBody = errors.New("couldn't unmarshal messagee")
 )
 
+// AMQPConsumer ...
+type AMQPConsumer interface {
+	Consume(ctx context.Context, queue string) error
+}
+
 // Consumer ...
 type Consumer struct {
 	Shutdown chan os.Signal
