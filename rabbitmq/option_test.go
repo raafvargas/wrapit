@@ -18,6 +18,22 @@ func TestWithPrefetch(t *testing.T) {
 	assert.Equal(t, 10, consumer.Prefetch)
 }
 
+func TestWithQueue(t *testing.T) {
+	consumer := &rabbitmq.Consumer{}
+
+	rabbitmq.WithQueue("queue")(consumer)
+
+	assert.Equal(t, "queue", consumer.Queue)
+}
+
+func TestWithExchange(t *testing.T) {
+	consumer := &rabbitmq.Consumer{}
+
+	rabbitmq.WithExchange("exchange")(consumer)
+
+	assert.Equal(t, "exchange", consumer.Exchange)
+}
+
 func TestWithAsynchronous(t *testing.T) {
 	consumer := &rabbitmq.Consumer{}
 
@@ -38,12 +54,16 @@ func TestWithHandler(t *testing.T) {
 
 	called := make(chan bool, 1)
 
-	rabbitmq.WithHandler(func(context.Context, interface{}) error {
-		called <- true
-		return nil
-	})(consumer)
+	rabbitmq.WithHandler(
+		rabbitmq.NewDefaultHandler(
+			func(context.Context, interface{}) error {
+				called <- true
+				return nil
+			},
+		),
+	)(consumer)
 
-	err := consumer.Handler(context.Background(), nil)
+	err := consumer.Handler.Handle(context.Background(), nil)
 	assert.NoError(t, err)
 	assert.True(t, <-called)
 }

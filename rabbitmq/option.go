@@ -30,7 +30,7 @@ func WithMessageType(t reflect.Type) ConsumerOption {
 }
 
 // WithHandler ...
-func WithHandler(handler func(context.Context, interface{}) error) ConsumerOption {
+func WithHandler(handler AMQPHandler) ConsumerOption {
 	return func(c *Consumer) {
 		c.Handler = handler
 	}
@@ -40,5 +40,19 @@ func WithHandler(handler func(context.Context, interface{}) error) ConsumerOptio
 func WithOnError(onError func(context.Context, error)) ConsumerOption {
 	return func(c *Consumer) {
 		c.OnError = onError
+	}
+}
+
+// WithQueue ...
+func WithQueue(queue string) ConsumerOption {
+	return func(c *Consumer) {
+		c.Queue = queue
+	}
+}
+
+// WithExchange ...
+func WithExchange(exchange string) ConsumerOption {
+	return func(c *Consumer) {
+		c.Exchange = exchange
 	}
 }

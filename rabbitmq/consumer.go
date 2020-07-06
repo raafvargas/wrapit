@@ -26,7 +26,7 @@ var (
 
 // AMQPConsumer ...
 type AMQPConsumer interface {
-	Consume(ctx context.Context, queue string) error
+	Consume(ctx context.Context) error
 }
 
 // Consumer ...
@@ -38,10 +38,12 @@ type Consumer struct {
 
 	tracer trace.Tracer
 
+	Queue        string
+	Exchange     string
 	MessageType  reflect.Type
 	Prefetch     int
 	Asynchronous int64
-	Handler      func(context.Context, interface{}) error
+	Handler      AMQPHandler
 	OnError      func(context.Context, error)
 }
 
@@ -67,11 +69,19 @@ func NewConsumer(connection *RabbitConnection, options ...ConsumerOption) (*Cons
 		return nil, errors.New("messageType must not be nil")
 	}
 
+	if consumer.Queue == "" || consumer.Exchange == "" {
+		return nil, errors.New("queue and exchangee must not be empty")
+	}
+
 	return consumer, nil
 }
 
 // Consume ...
-func (c *Consumer) Consume(ctx context.Context, queue string) error {
+func (c *Consumer) Consume(ctx context.Context) error {
+	if err := c.ensureQueue(ctx); err != nil {
+		return err
+	}
+
 	signal.Notify(c.Shutdown, os.Interrupt)
 
 	if err := c.connection.Channel.Qos(c.Prefetch, 0, false); err != nil {
@@ -80,7 +90,7 @@ func (c *Consumer) Consume(ctx context.Context, queue string) error {
 
 	c.stopped = make(chan error, 1)
 
-	go c.createConsumer(ctx, queue)
+	go c.createConsumer(ctx, c.Queue)
 
 	return <-c.stopped
 }
@@ -90,6 +100,7 @@ func (c *Consumer) createConsumer(ctx context.Context, queue string) {
 
 	if err != nil {
 		c.stopped <- err
+		return
 	}
 
 	sem := semaphore.NewWeighted(c.Asynchronous)
@@ -137,7 +148,7 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 		return
 	}
 
-	if err := c.Handler(ctx, message); err != nil {
+	if err := c.Handler.Handle(ctx, message); err != nil {
 		span.RecordError(ctx, err)
 
 		logrus.WithError(err).
@@ -161,4 +172,16 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 		logrus.WithError(err).
 			Error("ack error")
 	}
+}
+
+func (c *Consumer) ensureQueue(ctx context.Context) error {
+	if err := c.connection.EnsureExchange(ctx, c.Exchange); err != nil {
+		return err
+	}
+
+	if err := c.connection.EnsureQueue(ctx, c.Queue, c.Exchange); err != nil {
+		return err
+	}
+
+	return nil
 }

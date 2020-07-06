@@ -68,25 +68,29 @@ func (s *ConsumerTestSuite) TestConsumer() {
 
 	consumer, err := rabbitmq.NewConsumer(
 		s.connection,
+		rabbitmq.WithQueue(s.queueName),
+		rabbitmq.WithExchange(s.exchangeName),
 		rabbitmq.WithMessageType(reflect.TypeOf(message)),
 		rabbitmq.WithHandler(
-			func(_ context.Context, message interface{}) error {
-				m, ok := message.(*struct {
-					A string `json:"a"`
-				})
+			rabbitmq.NewDefaultHandler(
+				func(_ context.Context, message interface{}) error {
+					m, ok := message.(*struct {
+						A string `json:"a"`
+					})
 
-				s.assert.True(ok)
-				s.assert.Equal("B", m.A)
+					s.assert.True(ok)
+					s.assert.Equal("B", m.A)
 
-				called <- true
-				return nil
-			},
+					called <- true
+					return nil
+				},
+			),
 		),
 	)
 	s.assert.NoError(err)
 
 	go func() {
-		if err := consumer.Consume(context.Background(), s.queueName); err != nil {
+		if err := consumer.Consume(context.Background()); err != nil {
 			s.T().Log(err)
 			s.FailNow(err.Error())
 		}
@@ -113,16 +117,23 @@ func (s *ConsumerTestSuite) TestConsumerInvalidMessage() {
 
 	consumer, err := rabbitmq.NewConsumer(
 		s.connection,
+		rabbitmq.WithQueue(s.queueName),
+		rabbitmq.WithExchange(s.exchangeName),
 		rabbitmq.WithMessageType(reflect.TypeOf(map[string]interface{}{})),
 		rabbitmq.WithHandler(
-			func(context.Context, interface{}) error { return nil }),
+			rabbitmq.NewDefaultHandler(
+				func(context.Context, interface{}) error {
+					return nil
+				},
+			),
+		),
 		rabbitmq.WithOnError(func(_ context.Context, err error) {
 			errCh <- err
 		}),
 	)
 	s.assert.NoError(err)
 
-	go consumer.Consume(context.Background(), s.queueName)
+	go consumer.Consume(context.Background())
 
 	conn, _ := rabbitmq.NewConnection(s.config.RabbitMQ)
 	producer := rabbitmq.NewProducer(conn)
@@ -149,11 +160,15 @@ func (s *ConsumerTestSuite) TestConsumerHandlerError() {
 
 	consumer, err := rabbitmq.NewConsumer(
 		s.connection,
+		rabbitmq.WithQueue(s.queueName),
+		rabbitmq.WithExchange(s.exchangeName),
 		rabbitmq.WithMessageType(reflect.TypeOf(message)),
 		rabbitmq.WithHandler(
-			func(context.Context, interface{}) error {
-				return handlerErr
-			},
+			rabbitmq.NewDefaultHandler(
+				func(context.Context, interface{}) error {
+					return handlerErr
+				},
+			),
 		),
 		rabbitmq.WithOnError(func(_ context.Context, err error) {
 			errCh <- err
@@ -161,7 +176,7 @@ func (s *ConsumerTestSuite) TestConsumerHandlerError() {
 	)
 	s.assert.NoError(err)
 
-	go consumer.Consume(context.Background(), s.queueName)
+	go consumer.Consume(context.Background())
 
 	conn, _ := rabbitmq.NewConnection(s.config.RabbitMQ)
 	producer := rabbitmq.NewProducer(conn)
@@ -183,10 +198,34 @@ func (s *ConsumerTestSuite) TestNewConsumerWithoutHandler() {
 }
 
 func (s *ConsumerTestSuite) TestNewConsumerWithoutMessageType() {
-	_, err := rabbitmq.NewConsumer(s.connection, rabbitmq.WithHandler(func(context.Context, interface{}) error {
-		return nil
-	}))
+	_, err := rabbitmq.NewConsumer(
+		s.connection,
+		rabbitmq.WithHandler(
+			rabbitmq.NewDefaultHandler(
+				func(context.Context, interface{}) error {
+					return nil
+				},
+			),
+		),
+	)
 
 	s.assert.Error(err)
 	s.assert.EqualError(err, "messageType must not be nil")
+}
+
+func (s *ConsumerTestSuite) TestNewConsumerWithoutExchangeAndQueue() {
+	_, err := rabbitmq.NewConsumer(
+		s.connection,
+		rabbitmq.WithMessageType(reflect.TypeOf("")),
+		rabbitmq.WithHandler(
+			rabbitmq.NewDefaultHandler(
+				func(context.Context, interface{}) error {
+					return nil
+				},
+			),
+		),
+	)
+
+	s.assert.Error(err)
+	s.assert.EqualError(err, "queue and exchangee must not be empty")
 }
