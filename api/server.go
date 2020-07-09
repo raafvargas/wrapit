@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -80,7 +79,7 @@ func (server *Server) Run() error {
 		Handler: server.Engine,
 	}
 
-	signal.Notify(server.Shutdown, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(server.Shutdown, os.Interrupt)
 
 	go func() {
 		<-server.Shutdown
