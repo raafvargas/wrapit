@@ -73,7 +73,8 @@ func (rc *RabbitConnection) EnsureQueue(ctx context.Context, queueName, exchange
 		return err
 	}
 
-	return rc.createQueue(ctx, dlq, "", exchangeName, nil)
+	_, err := rc.Channel.QueueDeclare(dlq, true, false, false, false, nil)
+	return err
 }
 
 // EnsureExchange ...
