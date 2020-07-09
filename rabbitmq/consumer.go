@@ -136,7 +136,7 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 			WithField("body", string(delivery.Body)).
 			Warn("coldn't unmarshal message body")
 
-		if err := delivery.Nack(false, false); err != nil {
+		if err := delivery.Reject(false); err != nil {
 			span.RecordError(ctx, err)
 			logrus.WithError(err).Error("nack error")
 		}
@@ -154,7 +154,7 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 		logrus.WithError(err).
 			Error("consumer handler error")
 
-		if err := delivery.Nack(false, !delivery.Redelivered); err != nil {
+		if err := delivery.Reject(false); err != nil {
 			span.RecordError(ctx, err)
 			logrus.WithError(err).Error("nack error")
 		}
