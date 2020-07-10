@@ -112,6 +112,55 @@ func (s *ConsumerTestSuite) TestConsumer() {
 	<-done
 }
 
+func (s *ConsumerTestSuite) TestConsumerPanic() {
+	message := struct {
+		A string `json:"a"`
+	}{
+		A: "B",
+	}
+
+	called := make(chan bool, 1)
+	done := make(chan interface{}, 1)
+
+	consumer, err := rabbitmq.NewConsumer(
+		s.connection,
+		rabbitmq.WithQueue(s.queueName),
+		rabbitmq.WithExchange(s.exchangeName),
+		rabbitmq.WithMessageType(reflect.TypeOf(message)),
+		rabbitmq.WithHandler(
+			rabbitmq.NewDefaultHandler(
+				func(_ context.Context, message interface{}) error {
+					called <- true
+					panic("got some error")
+				},
+			),
+		),
+	)
+	s.assert.NoError(err)
+
+	go func() {
+		if err := consumer.Consume(context.Background()); err != nil {
+			s.T().Log(err)
+			s.FailNow(err.Error())
+		}
+
+		done <- true
+	}()
+
+	conn, _ := rabbitmq.NewConnection(s.config.RabbitMQ)
+	producer := rabbitmq.NewProducer(conn)
+	defer conn.Close()
+
+	producer.Publish(context.Background(), s.exchangeName, message)
+	s.assert.NoError(err)
+
+	s.assert.True(<-called)
+
+	consumer.Shutdown <- os.Interrupt
+
+	<-done
+}
+
 func (s *ConsumerTestSuite) TestConsumerInvalidMessage() {
 	errCh := make(chan error, 1)
 

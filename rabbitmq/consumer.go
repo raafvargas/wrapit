@@ -122,6 +122,13 @@ func (c *Consumer) createConsumer(ctx context.Context, queue string) {
 }
 
 func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
+	defer func() {
+		if err := recover(); err != nil {
+			logrus.WithField("err", err).Errorf("consumer panicked")
+			delivery.Reject(false)
+		}
+	}()
+
 	ctx := tracing.AMQPPropagator.Extract(context.Background(), tracing.AMQPSupplier(delivery.Headers))
 
 	ctx, span := c.tracer.Start(ctx, ConsumerOperationName,
