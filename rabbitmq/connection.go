@@ -78,8 +78,7 @@ func (rc *RabbitConnection) EnsureQueue(ctx context.Context, queueName, exchange
 		return err
 	}
 
-	_, err := rc.Channel.QueueDeclare(dlqQueue, true, false, false, false, nil)
-	return err
+	return rc.createQueue(ctx, dlqQueue, "", DeadLetterExchange, nil)
 }
 
 // EnsureExchange ...
