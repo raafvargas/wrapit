@@ -17,10 +17,15 @@ var (
 
 	// DefaultReconnectDelay ...
 	DefaultReconnectDelay = time.Second * 5
+
 	// ConnectionIdentifierProperty ...
 	ConnectionIdentifierProperty = "id"
+
 	// DeadLetterSufix ..
 	DeadLetterSufix = "dlq"
+
+	// DeadLetterExchange ...
+	DeadLetterExchange = "dead-letter"
 )
 
 // RabbitConfig ...
@@ -64,10 +69,9 @@ func NewConnection(config *RabbitConfig) (*RabbitConnection, error) {
 // EnsureQueue ...
 func (rc *RabbitConnection) EnsureQueue(ctx context.Context, queueName, exchangeName string) error {
 	dlqQueue := fmt.Sprintf("%s.%s", queueName, DeadLetterSufix)
-	dlqExchange := fmt.Sprintf("%s.%s", exchangeName, DeadLetterSufix)
 
 	attributes := make(amqp.Table)
-	attributes["x-dead-letter-exchange"] = dlqExchange
+	attributes["x-dead-letter-exchange"] = DeadLetterExchange
 	attributes["x-dead-letter-routing-key"] = dlqQueue
 
 	if err := rc.createQueue(ctx, queueName, "", exchangeName, attributes); err != nil {
@@ -80,12 +84,11 @@ func (rc *RabbitConnection) EnsureQueue(ctx context.Context, queueName, exchange
 
 // EnsureExchange ...
 func (rc *RabbitConnection) EnsureExchange(ctx context.Context, exchangeName string) error {
-	dlq := fmt.Sprintf("%s.%s", exchangeName, DeadLetterSufix)
 	if err := rc.Channel.ExchangeDeclare(exchangeName, "fanout", true, false, false, false, nil); err != nil {
 		return err
 	}
 
-	return rc.Channel.ExchangeDeclare(dlq, "fanout", true, false, false, false, nil)
+	return rc.Channel.ExchangeDeclare(DeadLetterExchange, "fanout", true, false, false, false, nil)
 }
 
 // Close ...

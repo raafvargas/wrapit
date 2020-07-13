@@ -191,8 +191,10 @@ func (s *ConsumerTestSuite) TestConsumerInvalidMessage() {
 	err = producer.Publish(context.Background(), s.exchangeName, "invalid_json")
 	s.assert.NoError(err)
 
-	s.assert.Error(<-errCh)
-	s.assert.EqualError(<-errCh, rabbitmq.ErrInvalidMessageBody.Error())
+	consumerErr := <-errCh
+
+	s.assert.Error(consumerErr)
+	s.assert.EqualError(consumerErr, rabbitmq.ErrInvalidMessageBody.Error())
 
 	consumer.Shutdown <- os.Interrupt
 }
@@ -234,8 +236,10 @@ func (s *ConsumerTestSuite) TestConsumerHandlerError() {
 	err = producer.Publish(context.Background(), s.exchangeName, message)
 	s.assert.NoError(err)
 
-	s.assert.Error(<-errCh)
-	s.assert.EqualError(<-errCh, handlerErr.Error())
+	consumerErr := <-errCh
+
+	s.assert.Error(consumerErr)
+	s.assert.EqualError(consumerErr, handlerErr.Error())
 
 	consumer.Shutdown <- os.Interrupt
 }
