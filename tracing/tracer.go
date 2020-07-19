@@ -1,7 +1,6 @@
 package tracing
 
 import (
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/api/global"
 	"go.opentelemetry.io/otel/exporters/trace/jaeger"
 
@@ -27,11 +26,6 @@ func Register(serviceName string, config *Config) (apitrace.Provider, func(), er
 			ServiceName: serviceName,
 		}),
 		jaeger.RegisterAsGlobal(),
-		jaeger.WithOnError(func(err error) {
-			logrus.
-				WithError(err).
-				Errorf("error sending traces to jaeger")
-		}),
 		jaeger.WithBufferMaxCount(10),
 		jaeger.WithSDK(
 			&sdktrace.Config{
