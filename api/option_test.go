@@ -52,3 +52,10 @@ func TestWithHandler(t *testing.T) {
 	api.WithHandler(func(*gin.Context) {})(server)
 	assert.Len(t, server.Handlers, 1)
 }
+
+func TestWithNoRoute(t *testing.T) {
+	server := new(api.Server)
+
+	api.WithNoRoute(func(*gin.Context) {})(server)
+	assert.Len(t, server.NoRoute, 1)
+}

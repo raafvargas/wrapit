@@ -41,3 +41,10 @@ func WithHandler(handler gin.HandlerFunc) Option {
 		server.Handlers = append(server.Handlers, handler)
 	}
 }
+
+// WithNoRoute ...
+func WithNoRoute(handler gin.HandlerFunc) Option {
+	return func(server *Server) {
+		server.NoRoute = append(server.NoRoute, handler)
+	}
+}

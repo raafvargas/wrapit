@@ -31,6 +31,7 @@ type Server struct {
 	Engine *gin.Engine
 
 	Handlers    []gin.HandlerFunc
+	NoRoute     []gin.HandlerFunc
 	Metrics     http.Handler
 	ServiceName string
 	Host        string
@@ -43,6 +44,7 @@ type Server struct {
 func New(opts ...Option) *Server {
 	server := &Server{}
 	server.Handlers = []gin.HandlerFunc{}
+	server.NoRoute = []gin.HandlerFunc{}
 	server.Controllers = []Controller{}
 	server.Shutdown = make(chan os.Signal)
 	server.Healthz = DefaultHealthz
@@ -63,10 +65,7 @@ func New(opts ...Option) *Server {
 		server.Metrics.ServeHTTP(ctx.Writer, ctx.Request)
 	})
 
-	server.Engine.NoRoute(func(c *gin.Context) {
-		c.AbortWithStatus(http.StatusNotFound)
-	})
-
+	server.Engine.NoRoute(server.NoRoute...)
 	server.Engine.Use(server.Engine.Handlers...)
 
 	for _, ctrl := range server.Controllers {
