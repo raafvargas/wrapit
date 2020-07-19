@@ -34,3 +34,10 @@ func WithHealthz(healthz gin.HandlerFunc) Option {
 		server.Healthz = healthz
 	}
 }
+
+// WithHandler ...
+func WithHandler(handler gin.HandlerFunc) Option {
+	return func(server *Server) {
+		server.Handlers = append(server.Handlers, handler)
+	}
+}

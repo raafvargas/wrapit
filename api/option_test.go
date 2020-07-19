@@ -45,3 +45,10 @@ func TestWithHealthz(t *testing.T) {
 
 	assert.True(t, <-called)
 }
+
+func TestWithHandler(t *testing.T) {
+	server := new(api.Server)
+
+	api.WithHandler(func(*gin.Context) {})(server)
+	assert.Len(t, server.Handlers, 1)
+}
