@@ -25,7 +25,6 @@ func Register(serviceName string, config *Config) (apitrace.Provider, func(), er
 		jaeger.WithProcess(jaeger.Process{
 			ServiceName: serviceName,
 		}),
-		jaeger.RegisterAsGlobal(),
 		jaeger.WithBufferMaxCount(10),
 		jaeger.WithSDK(
 			&sdktrace.Config{

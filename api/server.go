@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 
-	gintrace "go.opentelemetry.io/contrib/instrumentation/gin-gonic/gin"
+	gintrace "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin"
 )
 
 // Config ...
