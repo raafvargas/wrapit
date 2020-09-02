@@ -79,3 +79,12 @@ func (r *MongoRepository) FindByID(ctx context.Context, id interface{}) (interfa
 
 	return doc, err
 }
+
+// Delete ...
+func (r *MongoRepository) Delete(ctx context.Context, id interface{}) error {
+	_, err := r.Collection.DeleteOne(ctx, bson.M{
+		"_id": id,
+	})
+
+	return err
+}

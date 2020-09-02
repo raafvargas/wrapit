@@ -64,6 +64,12 @@ func (s *RepositoryTestSuite) TestRepository() {
 	result2, err := s.repository.FindByID(context.Background(), doc.ID)
 	s.assert.NoError(err)
 	s.assert.NotEqual(oldValue, result2.(*MongoTestDocument).Value)
+
+	err = s.repository.Delete(context.Background(), doc.ID)
+	s.assert.NoError(err)
+
+	_, err = s.repository.FindByID(context.Background(), doc.ID)
+	s.assert.Error(mongo.ErrNoDocuments)
 }
 
 func (s *RepositoryTestSuite) TestRepositoryInvalidID() {
