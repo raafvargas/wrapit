@@ -37,6 +37,7 @@ type Consumer struct {
 	connection *RabbitConnection
 
 	tracer trace.Tracer
+	logger *logrus.Logger
 
 	Queue        string
 	Exchange     string
@@ -51,6 +52,7 @@ type Consumer struct {
 func NewConsumer(connection *RabbitConnection, options ...ConsumerOption) (*Consumer, error) {
 	consumer := &Consumer{
 		connection:   connection,
+		logger:       logrus.New(),
 		tracer:       global.Tracer(TracingTracerName),
 		Asynchronous: 10,
 		Prefetch:     100,
@@ -122,9 +124,12 @@ func (c *Consumer) createConsumer(ctx context.Context, queue string) {
 }
 
 func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
+	c.logger.WithField("queue", c.Queue).WithField("exchange", delivery.Exchange).
+		Infof("start consuming message %s", delivery.MessageId)
+
 	defer func() {
 		if err := recover(); err != nil {
-			logrus.WithField("err", err).Errorf("consumer panicked")
+			c.logger.WithField("err", err).Errorf("consumer panicked")
 			delivery.Reject(false)
 		}
 	}()
@@ -139,13 +144,13 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 
 	if err := json.Unmarshal(delivery.Body, message); err != nil {
 		span.RecordError(ctx, err)
-		logrus.WithField("type", c.MessageType.String()).
+		c.logger.WithField("type", c.MessageType.String()).
 			WithField("body", string(delivery.Body)).
 			Warn("coldn't unmarshal message body")
 
 		if err := delivery.Reject(false); err != nil {
 			span.RecordError(ctx, err)
-			logrus.WithError(err).Error("nack error")
+			c.logger.WithError(err).Error("nack error")
 		}
 
 		if c.OnError != nil {
@@ -158,12 +163,12 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 	if err := c.Handler.Handle(ctx, message); err != nil {
 		span.RecordError(ctx, err)
 
-		logrus.WithError(err).
+		c.logger.WithError(err).
 			Error("consumer handler error")
 
 		if err := delivery.Reject(false); err != nil {
 			span.RecordError(ctx, err)
-			logrus.WithError(err).Error("nack error")
+			c.logger.WithError(err).Error("nack error")
 		}
 
 		if c.OnError != nil {
@@ -176,9 +181,12 @@ func (c *Consumer) handleDelivery(delivery amqp.Delivery) {
 	if err := delivery.Ack(false); err != nil {
 		span.RecordError(ctx, err)
 
-		logrus.WithError(err).
+		c.logger.WithError(err).
 			Error("ack error")
+		return
 	}
+
+	c.logger.Infof("finished message %s", delivery.MessageId)
 }
 
 func (c *Consumer) ensureQueue(ctx context.Context) error {
