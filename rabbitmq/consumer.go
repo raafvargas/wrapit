@@ -107,6 +107,9 @@ func (c *Consumer) createConsumer(ctx context.Context, queue string) {
 
 	sem := semaphore.NewWeighted(c.Asynchronous)
 
+	c.logger.WithField("queue", c.Queue).WithField("exchange", c.Exchange).
+		Info("starting consumer")
+
 	for {
 		select {
 		case message := <-delivery:
