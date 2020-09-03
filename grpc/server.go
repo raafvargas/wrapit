@@ -73,6 +73,9 @@ func (s *GRPCServer) Run(ctx context.Context) error {
 		}
 	}()
 
+	s.logger.WithField("addr", s.listener.Addr().String()).
+		Info("starting grpc server")
+
 	if err := s.grpc.Serve(s.listener); err != nil {
 		return err
 	}
